@@ -7,11 +7,13 @@ using System.IO;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using Microsoft.VisualBasic;
-
+using System.IO;
+using ClosedXML.Excel;
 
 
 namespace DataConvertCheckTool {
     class Program {
+
 
         //summary
         //引数：チェックしたいパスが記載されているTextファイルのパス
@@ -72,11 +74,66 @@ namespace DataConvertCheckTool {
         }
     }
 
+
+    
+
     class XlsPath {
 
 
+        StreamWriter stream;
 
-        public void CheckSheet(string filePath)
+
+        //summary
+        //データ変換ツールのデータからフルパスのtxtを出力する
+     public void DataConvertToText( string filePath  ){
+
+            try
+            {
+                //Excelを開く
+                ExcelPackage excel = new ExcelPackage(new FileInfo(filePath));
+                ExcelWorksheet excelWorksheet = excel.Workbook.Worksheets["変換設定"];
+
+                //ClosedXml
+                XLWorkbook xLWorkbook = new XLWorkbook(filePath);
+                IXLWorksheet workSheet = xLWorkbook.Worksheet("変換設定");
+
+
+                //出力ファイル
+                stream = new StreamWriter(filePath, false, Encoding.GetEncoding("shift_jis"));
+                stream.WriteLine("[HEAD]");
+                stream.WriteLine(DateTime.Now);
+                stream.WriteLine();
+
+
+                //データ変換ツールに記載のパスを取得
+                //最終データ行を取得する場合はepplusを使うより、ClosedXmlを使う早い
+                var lastRow = workSheet.RangeUsed.ragen
+                    workSheet.rangeUsed.RangeAddress.LastAddress.RowNumber
+
+
+            }
+            catch (Exception e)
+            {
+
+
+
+
+
+
+
+
+            }
+
+
+
+
+    }
+
+
+
+
+
+    public void CheckSheet(string filePath)
         {
             //Excelを開く
             ExcelPackage excel = new ExcelPackage(new FileInfo(filePath));
@@ -110,5 +167,8 @@ namespace DataConvertCheckTool {
             }
         }
     }
+
+
+
 
 }
