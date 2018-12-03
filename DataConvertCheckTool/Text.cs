@@ -10,29 +10,29 @@ namespace DataConvertCheckTool
 
     //summarty
     //Text出力用のクラスライブラリ
-    class Text : StreamWriter
-    {
+    //class Text : StreamWriter
+    //{
 
-        StreamWriter sw;
-
-
-        ////パスを指定する場合
-        //Text() : base(string)
-        //{
-        //    string filePath = @"C:\Users\house\OneDrive\ドキュメント\GitHub\pre\text.txt";
-        //    sw = new StreamWriter(filePath, false, Encoding.GetEncoding("shift_jis"));
+    //    StreamWriter sw;
 
 
-
-
-
-        //}
+    //    ////パスを指定する場合
+    //    //Text() : base(string)
+    //    //{
+    //    //    string filePath = @"C:\Users\house\OneDrive\ドキュメント\GitHub\pre\text.txt";
+    //    //    sw = new StreamWriter(filePath, false, Encoding.GetEncoding("shift_jis"));
 
 
 
 
 
+    //    //}
 
 
-    }
+
+
+
+
+
+    //}
 }

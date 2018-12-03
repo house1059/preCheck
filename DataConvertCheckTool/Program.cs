@@ -7,7 +7,6 @@ using System.IO;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
 using Microsoft.VisualBasic;
-using System.IO;
 using ClosedXML.Excel;
 
 
@@ -22,8 +21,9 @@ namespace DataConvertCheckTool {
 
             int fileCount = 0;
             
-            XlsPath xlp = null;
+            XlsPath xlp = new XlsPath();
 
+            xlp.DataConvertToText("C:/NSS/W119/sub/NSS_W115/M32C_8B_W115/Tool/batch/W119_データ変換ツール_Ver210a_W115枠用_jenkins.xlsm");
             //テキストを読み込む（本当はデータ変換ツールが通る保障まで行きたいが、データ変換ツールを通せばいいのでW119用としてとりあえず振分け表のチェックを行えればよい）
             List<String> path;
             string[] strPath;
@@ -89,7 +89,7 @@ namespace DataConvertCheckTool {
 
             try
             {
-                //Excelを開く
+                //Excelを開く   cellsのvalue(size,size)で最後の行が分かる？
                 ExcelPackage excel = new ExcelPackage(new FileInfo(filePath));
                 ExcelWorksheet excelWorksheet = excel.Workbook.Worksheets["変換設定"];
 
@@ -107,9 +107,6 @@ namespace DataConvertCheckTool {
 
                 //データ変換ツールに記載のパスを取得
                 //最終データ行を取得する場合はepplusを使うより、ClosedXmlを使う早い
-                var lastRow = workSheet.RangeUsed.ragen
-                    workSheet.rangeUsed.RangeAddress.LastAddress.RowNumber
-
 
             }
             catch (Exception e)
@@ -117,16 +114,7 @@ namespace DataConvertCheckTool {
 
 
 
-
-
-
-
-
             }
-
-
-
-
     }
 
 
