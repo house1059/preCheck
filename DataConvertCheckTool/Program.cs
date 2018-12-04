@@ -23,7 +23,9 @@ namespace DataConvertCheckTool {
             
             XlsPath xlp = new XlsPath();
 
-            xlp.DataConvertToText("C:/NSS/W119/sub/NSS_W115/M32C_8B_W115/Tool/batch/W119_データ変換ツール_Ver210a_W115枠用_jenkins.xlsm");
+            //xlp.DataConvertToText("C:/NSS/W119/sub/NSS_W115/M32C_8B_W115/Tool/batch/W119_データ変換ツール_Ver210a_W115枠用_jenkins.xlsm");
+            xlp.DataConvertToText("C:/Users/house/OneDrive/ドキュメント/GitHub/pre/DataConvertCheckTool/data/test.xlsx");
+            
             //テキストを読み込む（本当はデータ変換ツールが通る保障まで行きたいが、データ変換ツールを通せばいいのでW119用としてとりあえず振分け表のチェックを行えればよい）
             List<String> path;
             string[] strPath;
@@ -91,19 +93,36 @@ namespace DataConvertCheckTool {
             {
                 //Excelを開く   cellsのvalue(size,size)で最後の行が分かる？
                 ExcelPackage excel = new ExcelPackage(new FileInfo(filePath));
-                ExcelWorksheet excelWorksheet = excel.Workbook.Worksheets["変換設定"];
+                ExcelWorksheet sheet = excel.Workbook.Worksheets["変換設定"];
 
                 //ClosedXml
-                XLWorkbook xLWorkbook = new XLWorkbook(filePath);
-                IXLWorksheet workSheet = xLWorkbook.Worksheet("変換設定");
+                //XLWorkbook xLWorkbook = new XLWorkbook(filePath);
+                //IXLWorksheet workSheet = xLWorkbook.Worksheet("変換設定");
 
 
                 //出力ファイル
-                stream = new StreamWriter(filePath, false, Encoding.GetEncoding("shift_jis"));
+                int lastRow = sheet.Dimension.End.Row;
+                int lastColumn = sheet.Dimension.End.Column;
+
+
+                stream = new StreamWriter(filePath + ".txt", false, Encoding.GetEncoding("shift_jis"));
                 stream.WriteLine("[HEAD]");
                 stream.WriteLine(DateTime.Now);
                 stream.WriteLine();
 
+
+
+                for (int i = 0; i < lastRow; i++) {
+                    ExcelRangeBase rangeBase = sheet.Cells[12, 3].Offset(i, 0);
+                    if (null!= rangeBase.Value && rangeBase.Value.ToString() == "変換ファイル名（フルパス）"){
+                        if (null != rangeBase.Offset(0, 1).Value)
+                        {
+                            stream.WriteLine(rangeBase.Offset(0, 1).Value.ToString());
+                        }
+                    }
+                }
+
+                stream.Close();
 
                 //データ変換ツールに記載のパスを取得
                 //最終データ行を取得する場合はepplusを使うより、ClosedXmlを使う早い
