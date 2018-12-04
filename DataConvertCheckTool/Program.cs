@@ -95,14 +95,11 @@ namespace DataConvertCheckTool {
                 ExcelPackage excel = new ExcelPackage(new FileInfo(filePath));
                 ExcelWorksheet sheet = excel.Workbook.Worksheets["変換設定"];
 
-                //ClosedXml
-                //XLWorkbook xLWorkbook = new XLWorkbook(filePath);
-                //IXLWorksheet workSheet = xLWorkbook.Worksheet("変換設定");
-
-
                 //出力ファイル
                 int lastRow = sheet.Dimension.End.Row;
                 int lastColumn = sheet.Dimension.End.Column;
+
+                const int ROWOFFSET = 12;
 
 
                 stream = new StreamWriter(filePath + ".txt", false, Encoding.GetEncoding("shift_jis"));
@@ -110,10 +107,8 @@ namespace DataConvertCheckTool {
                 stream.WriteLine(DateTime.Now);
                 stream.WriteLine();
 
-
-
-                for (int i = 0; i < lastRow; i++) {
-                    ExcelRangeBase rangeBase = sheet.Cells[12, 3].Offset(i, 0);
+                for (int i = 0; i < (lastRow- ROWOFFSET+1) ; i++) {
+                    ExcelRangeBase rangeBase = sheet.Cells[ROWOFFSET, 3].Offset(i, 0);
                     if (null!= rangeBase.Value && rangeBase.Value.ToString() == "変換ファイル名（フルパス）"){
                         if (null != rangeBase.Offset(0, 1).Value)
                         {
@@ -121,18 +116,16 @@ namespace DataConvertCheckTool {
                         }
                     }
                 }
-
                 stream.Close();
-
-                //データ変換ツールに記載のパスを取得
-                //最終データ行を取得する場合はepplusを使うより、ClosedXmlを使う早い
 
             }
             catch (Exception e)
             {
-
-
-
+                StreamWriter error = new StreamWriter(filePath + ".log", false, Encoding.GetEncoding("shift_jis"));
+                error.WriteLine("Error log");
+                error.WriteLine(e.Message);
+                error.WriteLine(e.Source);
+                error.Close();
             }
     }
 
