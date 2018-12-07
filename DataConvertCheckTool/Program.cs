@@ -23,8 +23,8 @@ namespace DataConvertCheckTool {
             
             XlsPath xlp = new XlsPath();
 
-            //xlp.DataConvertToText("C:/NSS/W119/sub/NSS_W115/M32C_8B_W115/Tool/batch/W119_データ変換ツール_Ver210a_W115枠用_jenkins.xlsm");
-            xlp.DataConvertToText("C:/Users/house/OneDrive/ドキュメント/GitHub/pre/DataConvertCheckTool/data/test.xlsx");
+            xlp.DataConvertToText("C:/NSS/W119/sub/NSS_W115/M32C_8B_W115/Tool/batch/W119_データ変換ツール_Ver210a_W115枠用_jenkins.xlsm");
+            //xlp.DataConvertToText("C:/Users/house/OneDrive/ドキュメント/GitHub/pre/DataConvertCheckTool/data/test.xlsx");
             
             //テキストを読み込む（本当はデータ変換ツールが通る保障まで行きたいが、データ変換ツールを通せばいいのでW119用としてとりあえず振分け表のチェックを行えればよい）
             List<String> path;
@@ -99,18 +99,15 @@ namespace DataConvertCheckTool {
                 int lastRow = sheet.Dimension.End.Row;
                 int lastColumn = sheet.Dimension.End.Column;
 
-                const int ROWOFFSET = 12;
-
-
                 stream = new StreamWriter(filePath + ".txt", false, Encoding.GetEncoding("shift_jis"));
                 stream.WriteLine("[HEAD]");
                 stream.WriteLine(DateTime.Now);
                 stream.WriteLine();
 
-                for (int i = 0; i < (lastRow- ROWOFFSET+1) ; i++) {
-                    ExcelRangeBase rangeBase = sheet.Cells[ROWOFFSET, 3].Offset(i, 0);
+                for (int i = 0; i <= (lastRow) ; i++) {
+                    ExcelRangeBase rangeBase = sheet.Cells[1, 3].Offset(i, 0);
                     if (null!= rangeBase.Value && rangeBase.Value.ToString() == "変換ファイル名（フルパス）"){
-                        if (null != rangeBase.Offset(0, 1).Value)
+                        if (null != rangeBase.Offset(0, 1).Value && rangeBase.Offset(0, 1).Value.ToString() != "")
                         {
                             stream.WriteLine(rangeBase.Offset(0, 1).Value.ToString());
                         }
