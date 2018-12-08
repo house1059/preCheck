@@ -19,12 +19,13 @@ namespace DataConvertCheckTool {
         static void Main(string[] args)
         {
 
-            int fileCount = 0;
-            
             XlsPath xlp = new XlsPath();
+            //string filePath = "C:/NSS/W119/sub/NSS_W115/M32C_8B_W115/Tool/batch/W119_データ変換ツール_Ver210a_W115枠用_jenkins";
+            string filePath = "C:/Users/house/OneDrive/ドキュメント/GitHub/pre/DataConvertCheckTool/data/test";
 
-            xlp.DataConvertToText("C:/NSS/W119/sub/NSS_W115/M32C_8B_W115/Tool/batch/W119_データ変換ツール_Ver210a_W115枠用_jenkins.xlsm");
-            //xlp.DataConvertToText("C:/Users/house/OneDrive/ドキュメント/GitHub/pre/DataConvertCheckTool/data/test.xlsx");
+
+            //xlp.DataConvertToText(");
+            xlp.DataConvertToText(filePath);
             
             //テキストを読み込む（本当はデータ変換ツールが通る保障まで行きたいが、データ変換ツールを通せばいいのでW119用としてとりあえず振分け表のチェックを行えればよい）
             List<String> path;
@@ -32,9 +33,15 @@ namespace DataConvertCheckTool {
 
             try
             {
+                //Pathファイルを作成
                 StreamReader stream = new StreamReader(args[0], Encoding.GetEncoding("shift_jis"));
                 strPath =  stream.ReadToEnd().Split('\n');
                 stream.Close();     //ファイルioは素早く終わらせる
+
+
+                //Pathファイルを読み込み簡易チェックを行う
+
+
 
             }catch (Exception e)
             {
@@ -85,10 +92,11 @@ namespace DataConvertCheckTool {
         StreamWriter stream;
 
 
-        //summary
-        //データ変換ツールのデータからフルパスのtxtを出力する
-     public void DataConvertToText( string filePath  ){
+    //summary
+    //データ変換ツールのデータからフルパスのtxtを出力する
+    public string DataConvertToText( string filePath  ){
 
+            string txtPath = filePath + ".txt";
             try
             {
                 //Excelを開く   cellsのvalue(size,size)で最後の行が分かる？
@@ -99,7 +107,8 @@ namespace DataConvertCheckTool {
                 int lastRow = sheet.Dimension.End.Row;
                 int lastColumn = sheet.Dimension.End.Column;
 
-                stream = new StreamWriter(filePath + ".txt", false, Encoding.GetEncoding("shift_jis"));
+
+                stream = new StreamWriter(txtPath, false, Encoding.GetEncoding("shift_jis"));
                 stream.WriteLine("[HEAD]");
                 stream.WriteLine(DateTime.Now);
                 stream.WriteLine();
@@ -114,7 +123,6 @@ namespace DataConvertCheckTool {
                     }
                 }
                 stream.Close();
-
             }
             catch (Exception e)
             {
@@ -124,14 +132,17 @@ namespace DataConvertCheckTool {
                 error.WriteLine(e.Source);
                 error.Close();
             }
+            return txtPath;
     }
 
-
-
-
-
+    //summary
+    //指定したファイルを開き簡易チェックを行う。
     public void CheckSheet(string filePath)
-        {
+    {
+
+            //fileExists
+            if (File.Exists(filePath) == false) return;
+
             //Excelを開く
             ExcelPackage excel = new ExcelPackage(new FileInfo(filePath));
 
@@ -142,7 +153,8 @@ namespace DataConvertCheckTool {
                 {
 
                     //◎の検索（なければリターン）、移動
-
+                    //Findメソッドがないので、cellデータを取得してLinqによりアドレスを算出する
+                    var find = from cell in ws.Cells where cell.Text == "◎" select cell;
 
 
                     //振分けテーブル名の被りチェック( Dictionaryチェック）
