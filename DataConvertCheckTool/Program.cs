@@ -20,28 +20,26 @@ namespace DataConvertCheckTool {
         {
 
             XlsPath xlp = new XlsPath();
-            //string filePath = "C:/NSS/W119/sub/NSS_W115/M32C_8B_W115/Tool/batch/W119_データ変換ツール_Ver210a_W115枠用_jenkins";
-            string filePath = "C:/Users/house/OneDrive/ドキュメント/GitHub/pre/DataConvertCheckTool/data/test";
-
-
-            //xlp.DataConvertToText(");
-            xlp.DataConvertToText(filePath);
-            
-            //テキストを読み込む（本当はデータ変換ツールが通る保障まで行きたいが、データ変換ツールを通せばいいのでW119用としてとりあえず振分け表のチェックを行えればよい）
-            List<String> path;
+            //string filePath = "C:/NSS/W119/sub/NSS_W115/M32C_8B_W115/Tool/batch/W119_データ変換ツール_Ver210a_W115枠用_jenkins.xlsx";
+            string filePath = "C:/Users/house/OneDrive/ドキュメント/GitHub/pre/DataConvertCheckTool/data/test.xlsx";
             string[] strPath;
 
+
+            xlp.DataConvertToText(filePath);
+            
             try
             {
                 //Pathファイルを作成
-                StreamReader stream = new StreamReader(args[0], Encoding.GetEncoding("shift_jis"));
+                StreamReader stream = new StreamReader(filePath + ".txt", Encoding.GetEncoding("shift_jis"));
                 strPath =  stream.ReadToEnd().Split('\n');
                 stream.Close();     //ファイルioは素早く終わらせる
 
 
                 //Pathファイルを読み込み簡易チェックを行う
-
-
+                for(int i = 3; i < strPath.Length; i++) { 
+                    //仕様書の各ファイルを開いて簡易チェックを行う
+                    xlp.CheckSheet(strPath[i]);
+                }
 
             }catch (Exception e)
             {
@@ -49,48 +47,14 @@ namespace DataConvertCheckTool {
                 Console.WriteLine(e.Message);
                 return;
             }
-            
-            
-            //ループ処理
-            foreach(string s in strPath)
-            {
-                //空白の場合無視
-                if (s == "") continue;
-
-                //パスが存在しない場合その旨をtextファイルに吐き出す
-                if( File.Exists(s) == false)
-                {
-                    //エラーの書き出し
-                }
-                else
-                {
-
-
-
-
-
-                }
-
-
-
-
-            }
-
-
-
-
-
+       
         }
     }
-
-
     
 
-    class XlsPath {
+class XlsPath {
 
-
-        StreamWriter stream;
-
+    StreamWriter stream;
 
     //summary
     //データ変換ツールのデータからフルパスのtxtを出力する
