@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Microsoft.VisualBasic;
+using OfficeOpenXml;
+using System;
+using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using OfficeOpenXml;
-using OfficeOpenXml.Style;
-using Microsoft.VisualBasic;
-using ClosedXML.Excel;
-
+using System.Collections.Generic;
+using SharpSvn;
 
 namespace DataConvertCheckTool {
     class Program {
@@ -20,23 +17,26 @@ namespace DataConvertCheckTool {
         {
 
             XlsPath xlp = new XlsPath();
-            //string filePath = "C:/NSS/W119/sub/NSS_W115/M32C_8B_W115/Tool/batch/W119_データ変換ツール_Ver210a_W115枠用_jenkins.xlsx";
-            string filePath = "C:/Users/house/OneDrive/ドキュメント/GitHub/pre/DataConvertCheckTool/data/test.xlsx";
+            string filePath = @"C:\NSS\W119\sub\NSS_W115\M32C_8B_W115\Tool\batch\W119_データ変換ツール_Ver210a_W115枠用_jenkins.xlsm";        //quated
+            //string filePath = @"C:/Users/house/OneDrive/ドキュメント/GitHub/pre/DataConvertCheckTool/data/test.xlsx";
             string[] strPath;
 
 
+
+
+
             xlp.DataConvertToText(filePath);
-            
+
             try
             {
                 //Pathファイルを作成
                 StreamReader stream = new StreamReader(filePath + ".txt", Encoding.GetEncoding("shift_jis"));
-                strPath =  stream.ReadToEnd().Split('\n');
+                strPath = stream.ReadToEnd().Split(new[] { "\r\n" }, StringSplitOptions.None);
                 stream.Close();     //ファイルioは素早く終わらせる
 
 
                 //Pathファイルを読み込み簡易チェックを行う
-                for(int i = 3; i < strPath.Length; i++) { 
+                for(int i = 39; i < strPath.Length; i++) {      //ここの39はw119が39列目まで振分けが無いので39で固定しているだけです。
                     //仕様書の各ファイルを開いて簡易チェックを行う
                     xlp.CheckSheet(strPath[i]);
                 }
@@ -55,10 +55,12 @@ namespace DataConvertCheckTool {
 class XlsPath {
 
     StreamWriter stream;
+    Dictionary<int, string> tbNmae = new Dictionary<int, string> { };       //振分けテーブルの名称チェック
 
-    //summary
-    //データ変換ツールのデータからフルパスのtxtを出力する
-    public string DataConvertToText( string filePath  ){
+
+        //summary
+        //データ変換ツールのデータからフルパスのtxtを出力する
+        public string DataConvertToText( string filePath  ){
 
             string txtPath = filePath + ".txt";
             try
@@ -103,26 +105,46 @@ class XlsPath {
     //指定したファイルを開き簡易チェックを行う。
     public void CheckSheet(string filePath)
     {
-
             //fileExists
             if (File.Exists(filePath) == false) return;
 
             //Excelを開く
             ExcelPackage excel = new ExcelPackage(new FileInfo(filePath));
 
+            //svnクライアント
+            SvnClient client = new SvnClient();
+            
+            //クライアントのファイル位置を設定  
+            SvnPathTarget local = new SvnPathTarget(filePath);
+
+            //ファイルのsvnプロパティを抜く
+            SvnInfoEventArgs clientInfo;
+            
+            client.GetInfo(local, out clientInfo);
+
             foreach (ExcelWorksheet ws in excel.Workbook.Worksheets)
             {
-                //tb_　シートのみを対象とする
-                if (Strings.StrConv(ws.Name, VbStrConv.Wide & VbStrConv.Uppercase).StartsWith("ＴＢ＿"))
+
+                string s = Strings.StrConv(ws.Name, VbStrConv.Wide | VbStrConv.Uppercase);
+
+                if (s.StartsWith("ＴＢ＿"))
                 {
+
+                    //振分けテーブル名の被りチェック( Dictionaryチェック）
+                    //→被っていれば被りエラーをｺﾚｸｼｮﾝ      
+                    if(tbNmae.ContainsValue( s ))
+                    {
+                        errData d = new errData();
+
+
+
+                    }
 
                     //◎の検索（なければリターン）、移動
                     //Findメソッドがないので、cellデータを取得してLinqによりアドレスを算出する
                     var find = from cell in ws.Cells where cell.Text == "◎" select cell;
 
-
-                    //振分けテーブル名の被りチェック( Dictionaryチェック）
-                    //→被っていれば被りエラーをｺﾚｸｼｮﾝ                    
+              
 
 
                     //振分け最大値の取得
@@ -141,6 +163,15 @@ class XlsPath {
         }
     }
 
+
+    //sammary
+    //データデータを集めてこれをリスト化して出力する
+    class errData {
+
+        int     errCode;
+        string errName;
+        string auther;
+    }
 
 
 
