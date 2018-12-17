@@ -12,6 +12,7 @@ namespace DataConvertCheckTool {
 enum ErrorCode :int
 {
     eTableName,     //テーブル名が同じ
+    eSum,           //横軸合計がおかしい
 }
 
 
@@ -53,10 +54,12 @@ enum ErrorCode :int
 
             }catch (Exception e)
             {
-
                 Console.WriteLine(e.Message);
-                return;
             }
+
+
+            Console.WriteLine("終了");
+
        
         }
     }
@@ -139,91 +142,117 @@ class XlsPath {
 
                 if (s.StartsWith("ＴＢ＿"))
                 {
+                    try { 
+
+                        //◎の検索（なければリターン）、移動
+                        //Findメソッドがないので、cellデータを取得してLinqによりアドレスを算出する
+                        var query = from cell in ws.Cells where cell.Value?.ToString() == "◎" select cell;
 
 
-                    //◎の検索（なければリターン）、移動
-                    //Findメソッドがないので、cellデータを取得してLinqによりアドレスを算出する
-                    var query = from cell in ws.Cells where cell.Text == "◎" select cell;
-
-
-                    //◎のリストが完成したのでそれぞれでデータチェック
-                    if (0 < query.Count()) {
-                        foreach( ExcelRangeBase range in query.ToList())
-                        {
-                            //振分けテーブル名の被りチェック( Dictionaryチェック）
-                            if (tbNmae.ContainsValue( range.Offset(0,1).Text))
-                            {
-                                ErrData d = new ErrData();
-                                d.Auther = clientInfo.LastChangeAuthor;
-                                d.ErrCode = ErrorCode.eTableName;
-                                d.ErrName = range.Offset(0, 1).Text;
-                                errorList.Add(d);
-
-                            } else
-                            {
-                                tbNmae.Add(tbNmae.Count + 1, range.Offset(0, 1).Text);
-                            }
-
-                            //振分け合計値の確認+データ有りの斜線チェック（W119では0データに斜線はＯＫ）
-                            int dataMax = int.Parse(range.Offset(3, 1).Text);
-
-
-                            //データ項目列（標準）まで移動　右移動で数値になるまで
-                            int dataEndColumn = 0;
-                            int dataEndRow = 0;
-
-                            ExcelRangeBase exStart;
-                            ExcelRangeBase exEnd;
-
-                            //データのスタート位置
-                            for (int i = 1; ; i++){
-                                if(int.TryParse(range.Offset(4, 1).Offset(0, i).Text,out int result) == false)
+                        //◎のリストが完成したのでそれぞれでデータチェック
+                        if (0 < query.Count()) {
+                                foreach (ExcelRangeBase range in query)
                                 {
-                                    exStart = range.Offset(5, 1).Offset(0, i);
-                                    break;
+                                    //振分けテーブル名の被りチェック( Dictionaryチェック）
+                                    if (tbNmae.ContainsValue(range.Offset(0, 1).Text))
+                                    {
+                                        ErrData d = new ErrData();
+                                        d.Auther = clientInfo.LastChangeAuthor;
+                                        d.ErrCode = ErrorCode.eTableName;
+                                        d.ErrName = range.Offset(0, 1).Text;
+                                        errorList.Add(d);
+
+                                    } else
+                                    {
+                                        tbNmae.Add(tbNmae.Count + 1, range.Offset(0, 1).Text);
+                                    }
+
+                                    //振分け合計値の確認+データ有りの斜線チェック（W119では0データに斜線はＯＫ）
+                                    int dataMax = int.Parse(range.Offset(3, 1).Text);
+
+
+                                    //データ項目列（標準）まで移動　右移動で数値になるまで
+                                    int dataEndColumn = 0;
+                                    int dataEndRow = 0;
+
+                                    ExcelRangeBase exStart;
+                                    ExcelRangeBase exEnd;
+
+                                    //データのスタート位置
+                                    for (int i = 1; ; i++)
+                                    {
+                                        if (int.TryParse(range.Offset(4, 1).Offset(0, i).Text, out int result) == false)
+                                        {
+                                            exStart = range.Offset(5, 1).Offset(0, i);
+                                            break;
+                                        }
+                                    }
+
+                                    //データの横終了位置
+                                    for (int i = 1; ; i++)
+                                    {
+                                        if (exStart.Offset(0, i).Text == "")
+                                        {
+                                            dataEndColumn = exStart.Offset(0, i - 1).Columns;
+                                            break;
+                                        }
+                                    }
+
+                                    //データの縦終了位置
+                                    for (int i = 1; ; i++)
+                                    {
+                                        if (exStart.Offset(i, 0).Text == "")
+                                        {
+                                            dataEndRow = exStart.Offset(i - 1, 0).Rows;
+                                            break;
+                                        }
+                                    }
+                                    exEnd = exStart.Offset(dataEndRow, dataEndColumn);
+
+                                    ExcelRangeBase dataCheck = exStart;
+                                    for (int i = 1; i <= dataEndRow; i++)
+                                    {
+                                        //横に足し算しながら進めていく
+                                        int sum = 0;
+                                        for (int x = 1; x <= dataEndColumn; x++)
+                                        {
+                                            if (int.TryParse(dataCheck.Offset(i, x).Value.ToString(), out int result))
+                                            {
+                                                sum += result;
+                                            }
+                                        }
+
+                                        //合計計算
+                                        if (sum != dataMax)
+                                        {
+                                            ErrData d = new ErrData();
+                                            d.Auther = clientInfo.LastChangeAuthor;
+                                            d.ErrCode = ErrorCode.eTableName;
+                                            d.ErrName = range.Offset(0, 1).Text;
+                                            errorList.Add(d);
+                                        }
+
+
+                                    }
+                                    //処理を完了した振分けシート名を出力（速度が見える）
+                                    Console.WriteLine(range.Offset(0, 1).Text);
+
                                 }
                             }
 
-                            //データの横終了位置
-                            for (int i = 1; ; i++)
-                            {
-                                if (exStart.Offset(0, i).Text == "")
-                                {
-                                    dataEndColumn = exStart.Offset(0, i-1).Columns;
-                                    break;
-                                }
-                            }
-
-                            //データの縦終了位置
-                            for (int i = 1; ; i++)
-                            {
-                                if (exStart.Offset(i, 0).Text == "")
-                                {
-                                    dataEndRow = exStart.Offset( i - 1,0).Rows;
-                                    break;
-                                }
-                            }
-                            exEnd = exStart.Offset(dataEndRow, dataEndColumn);
-
-                            ExcelRangeBase dataCheck = exStart;
-                            for(int i = 1; i <= dataEndRow; i++)
-                            {
-                                //横に足し算しながら進めていく
-                                int sum = 0;
-                                if(int.TryParse( dataCheck.Offset(0,i).Value.ToString(), out int result))
-                                {
-                                    sum += int.Parse(dataCheck.Offset(0, i).Value.ToString());
-                                }
-
-                            }
+                      
 
 
-                        }
+
+
+                    }catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
                     }
 
 
 
-                    
+
 
 
 
