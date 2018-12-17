@@ -8,7 +8,17 @@ using System.Collections.Generic;
 using SharpSvn;
 
 namespace DataConvertCheckTool {
+
+enum ErrorCode :int
+{
+    eTableName,     //テーブル名が同じ
+}
+
+
+
     class Program {
+
+
 
 
         //summary
@@ -56,7 +66,7 @@ class XlsPath {
 
     StreamWriter stream;
     Dictionary<int, string> tbNmae = new Dictionary<int, string> { };       //振分けテーブルの名称チェック
-
+    List<ErrData> errorList = new List<ErrData>();                          //エラーリスト
 
         //summary
         //データ変換ツールのデータからフルパスのtxtを出力する
@@ -130,21 +140,91 @@ class XlsPath {
                 if (s.StartsWith("ＴＢ＿"))
                 {
 
-                    //振分けテーブル名の被りチェック( Dictionaryチェック）
-                    //→被っていれば被りエラーをｺﾚｸｼｮﾝ      
-                    if(tbNmae.ContainsValue( s ))
-                    {
-                        errData d = new errData();
-
-
-
-                    }
 
                     //◎の検索（なければリターン）、移動
                     //Findメソッドがないので、cellデータを取得してLinqによりアドレスを算出する
-                    var find = from cell in ws.Cells where cell.Text == "◎" select cell;
+                    var query = from cell in ws.Cells where cell.Text == "◎" select cell;
 
-              
+
+                    //◎のリストが完成したのでそれぞれでデータチェック
+                    if (0 < query.Count()) {
+                        foreach( ExcelRangeBase range in query.ToList())
+                        {
+                            //振分けテーブル名の被りチェック( Dictionaryチェック）
+                            if (tbNmae.ContainsValue( range.Offset(0,1).Text))
+                            {
+                                ErrData d = new ErrData();
+                                d.Auther = clientInfo.LastChangeAuthor;
+                                d.ErrCode = ErrorCode.eTableName;
+                                d.ErrName = range.Offset(0, 1).Text;
+                                errorList.Add(d);
+
+                            } else
+                            {
+                                tbNmae.Add(tbNmae.Count + 1, range.Offset(0, 1).Text);
+                            }
+
+                            //振分け合計値の確認+データ有りの斜線チェック（W119では0データに斜線はＯＫ）
+                            int dataMax = int.Parse(range.Offset(3, 1).Text);
+
+
+                            //データ項目列（標準）まで移動　右移動で数値になるまで
+                            int dataEndColumn = 0;
+                            int dataEndRow = 0;
+
+                            ExcelRangeBase exStart;
+                            ExcelRangeBase exEnd;
+
+                            //データのスタート位置
+                            for (int i = 1; ; i++){
+                                if(int.TryParse(range.Offset(4, 1).Offset(0, i).Text,out int result) == false)
+                                {
+                                    exStart = range.Offset(5, 1).Offset(0, i);
+                                    break;
+                                }
+                            }
+
+                            //データの横終了位置
+                            for (int i = 1; ; i++)
+                            {
+                                if (exStart.Offset(0, i).Text == "")
+                                {
+                                    dataEndColumn = exStart.Offset(0, i-1).Columns;
+                                    break;
+                                }
+                            }
+
+                            //データの縦終了位置
+                            for (int i = 1; ; i++)
+                            {
+                                if (exStart.Offset(i, 0).Text == "")
+                                {
+                                    dataEndRow = exStart.Offset( i - 1,0).Rows;
+                                    break;
+                                }
+                            }
+                            exEnd = exStart.Offset(dataEndRow, dataEndColumn);
+
+                            ExcelRangeBase dataCheck = exStart;
+                            for(int i = 1; i <= dataEndRow; i++)
+                            {
+                                //横に足し算しながら進めていく
+                                int sum = 0;
+                                if(int.TryParse( dataCheck.Offset(0,i).Value.ToString(), out int result))
+                                {
+                                    sum += int.Parse(dataCheck.Offset(0, i).Value.ToString());
+                                }
+
+                            }
+
+
+                        }
+                    }
+
+
+
+                    
+
 
 
                     //振分け最大値の取得
@@ -166,11 +246,10 @@ class XlsPath {
 
     //sammary
     //データデータを集めてこれをリスト化して出力する
-    class errData {
-
-        int     errCode;
-        string errName;
-        string auther;
+    class ErrData {
+        public ErrorCode    ErrCode{ get; set; }
+        public string ErrName{ get; set; }
+        public string Auther{ get; set; }
     }
 
 
